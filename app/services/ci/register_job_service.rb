@@ -78,6 +78,12 @@ module Ci
 
     private
 
+    def dump_fields(obj)
+      obj.instance_variables.map do |ivar|
+        "#{ivar}=#{obj.instance_variable_get(ivar).inspect}"
+      end.join(", ")
+    end
+
     def process_queue_with_instrumentation(params)
       @metrics.observe_queue_time(:process, @runner.runner_type) do
         @logger.instrument(:process_queue, once: true) do
@@ -90,7 +96,34 @@ module Ci
       valid = true
       depth = 0
 
+      sorted_builds = []
       each_build(params) do |build, queue_size|
+        fields_dump = dump_fields(build)
+        ::Gitlab::AppJsonLogger.info(
+          message: "scheduler.inspect_job fields_dump=#{fields_dump} queue_size=#{queue_size}",
+          project_id: build.project_id
+        )
+        sorted_builds << { build: build, queue_size: queue_size }
+        next
+      end
+
+      sorted_builds = sorted_builds.sort_by do |elem|
+        match = elem[:build].name.match(/\[(\d+)\]/)
+        match ? -match[1].to_i : 0  # Negative for descending order
+      end
+
+      ::Gitlab::AppJsonLogger.info(
+        message: "sorted jobs:"
+      )
+
+      sorted_builds.each do |elem|
+        build = elem[:build]
+        queue_size = elem[:queue_size]
+        ::Gitlab::AppJsonLogger.info(
+          message: "sorted jobs: name=#{build.name} queue_size=#{queue_size}",
+          project_id: build.project_id
+        )
+
         depth += 1
         @metrics.increment_queue_operation(:queue_iteration)
 
