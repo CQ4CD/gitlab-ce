@@ -112,9 +112,35 @@ module Gitlab
         end
 
         def stage_builds_attributes(stage)
-          jobs.values
-            .select { |job| job[:stage] == stage }
-            .map { |job| build_attributes(job[:name]) }
+          stage_jobs = jobs.values.select { |job| job[:stage] == stage }
+
+          sorted_jobs = []
+          stage_jobs.each do |job|
+            Gitlab::AppJsonLogger.info(
+              message: 'yaml_processor.stage_builds_attributes.job',
+              stage_name: stage,
+              job_name: job[:name],
+              wait: job.dig(:variables, :WAIT)
+            )
+
+            sorted_jobs << job
+          end
+
+          sorted_jobs = sorted_jobs.sort_by do |job|
+            match = job[:name].match(/\[(\d+)\]/)
+            match ? -match[1].to_i : 0
+          end
+
+          sorted_jobs.each do |job|
+            Gitlab::AppJsonLogger.info(
+              message: 'yaml_processor.stage_builds_attributes.job.after_sort',
+              stage_name: stage,
+              job_name: job[:name],
+              wait: job.dig(:variables, :WAIT)
+            )
+          end
+
+          return sorted_jobs.map { |job| build_attributes(job[:name]) }
         end
 
         def build_attributes(name)

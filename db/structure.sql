@@ -5995,7 +5995,7 @@ PARTITION BY RANGE (created_at);
 
 CREATE TABLE loose_foreign_keys_deleted_records (
     id bigint NOT NULL,
-    partition bigint DEFAULT 1 NOT NULL,
+    partition bigint DEFAULT 2 NOT NULL,
     primary_key_value bigint NOT NULL,
     status smallint DEFAULT 1 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -6110,7 +6110,7 @@ PARTITION BY LIST (partition_id);
 
 CREATE TABLE p_ci_finished_build_ch_sync_events (
     build_id bigint NOT NULL,
-    partition bigint DEFAULT 1 NOT NULL,
+    partition bigint DEFAULT 2 NOT NULL,
     build_finished_at timestamp without time zone NOT NULL,
     processed boolean DEFAULT false NOT NULL,
     project_id bigint NOT NULL
@@ -6120,7 +6120,7 @@ PARTITION BY LIST (partition);
 CREATE TABLE p_ci_finished_pipeline_ch_sync_events (
     pipeline_id bigint NOT NULL,
     project_namespace_id bigint NOT NULL,
-    partition bigint DEFAULT 1 NOT NULL,
+    partition bigint DEFAULT 3 NOT NULL,
     pipeline_finished_at timestamp without time zone NOT NULL,
     processed boolean DEFAULT false NOT NULL
 )
